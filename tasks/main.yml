@@ -12,13 +12,21 @@
   notify:
     - restart monit
 
-- name: Monit | Copy the sshd/ntp/chron monit service files
+- debug: msg="{{mapped_interface_1}}"
+
+# Ansible resolves the path relative to the roles/<rolename>/files directory
+- name: Monit | Template the monit service files
   template:
-    src: "etc_monit_conf.d_{{item}}.j2"
-    dest: "/etc/monit/conf.d/{{item}}"
-  with_items:
-    - sshd
-    - cron
-    - ntp
+    src: "{{item}}"
+    dest: "/etc/monit/conf.d/{{item | basename | replace('etc_monit_conf.d_','') | replace('.j2','')}}"
+    owner: "{{ansible_ssh_user}}"
+    group: "{{ansible_ssh_user}}"
+    mode: 0660
+  with_fileglob: 
+    - ../templates/etc_monit_conf.d_*
   notify:
     - restart monit
+
+# - name: Set up service monitoring for all tagged services
+#   set_fact: 
+#     services="{{group_names | intersect(ansible_role_groups)}}"
