@@ -19,6 +19,8 @@ set daemon {{monit_poll_period}}
   with start delay {{monit_poll_start_delay}}
 {% endif %}
 
+set mmonit http://monit:monit@{{m_monit_ip}}:{{m_monit_port}}/collector
+
 set logfile {{monit_logfile}}
 
 set idfile /var/lib/monit/id

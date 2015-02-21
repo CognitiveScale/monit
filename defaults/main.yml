@@ -1,11 +1,10 @@
 
-# file: monit/defaults/main.yml
-
 iface: 'eth0'
 mapped_interface_1: "{{hostvars[inventory_hostname]['ansible_' + iface]['ipv4']['address']}}"
 
+
 #########################################
-# M/Monit
+# Monit
 #########################################
 monit_notify_email: "monit@cognitivescale.com"
 
@@ -39,6 +38,9 @@ monit_ssl: no
 monit_cert: "/etc/monit/monit.pem"
 
 monit_monitors_sshd_port: 22
+
+m_monit_ip: "{{hostvars[groups['m_monit'][0]]['ansible_default_ipv4']['address']}}"
+m_monit_port: "8081"
 
 # Canonical service dictionary for templating monit conf files
 # to be filled by calling role 
