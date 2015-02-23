@@ -5,15 +5,17 @@
     pkg: monit
     state: present
 
+- debug: msg="{{mapped_interface_1}}"
+- debug: msg="{{groups['m_monit']}}"
+- debug: msg="{{monit_mailserver_username}}"
+
 - name: Monit | Update the monit configuration (/etc/monit/monitrc)
   template:
     src: "etc_monit_monitrc.j2"
     dest: "/etc/monit/monitrc"
   notify:
     - restart monit
-
-- debug: msg="{{mapped_interface_1}}"
-
+                
 # Ansible resolves the path relative to the roles/<rolename>/files directory
 - name: Monit | Template the monit service files
   template:
