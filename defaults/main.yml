@@ -31,9 +31,9 @@ monit_mailserver_timeout: 60
 monit_mailserver_username: "{{lookup('env','MONIT_MAILSERVER_USERNAME') | default('')}}"
 monit_mailserver_password:  "{{lookup('env','MONIT_MAILSERVER_PASSWORD') | default('')}}"
 
-monit_port: 2812
+monit_port: '2812'
 monit_address: "{{mapped_interface_1}}"
-monit_allow: [ 0.0.0.0/0.0.0.0, '{{monit_username}}:{{monit_password}}', localhost, 10.0.0.0/255.0.0.0, 172.0.0.0/255.0.0.0, 192.0.0.0/255.0.0.0]
+monit_allow: [ '0.0.0.0/0.0.0.0', '{{monit_username}}:{{monit_password}}', localhost, '10.0.0.0/255.0.0.0', '172.0.0.0/255.0.0.0', '192.0.0.0/255.0.0.0']
 monit_username: admin
 monit_password: monit
 
@@ -42,8 +42,11 @@ monit_cert: "/etc/monit/monit.pem"
 
 monit_monitors_sshd_port: 22
 
-m_monit_ip: "{{hostvars[groups['m_monit'][0]]['ansible_default_ipv4']['address']}}"
-m_monit_port: "8081"
+m_monit_host: "{% if 'm_monit' in groups %}{{hostvars[groups['m_monit'][0]]}}{% else %}{% endif %}"
+m_monit_ip: "{% if m_monit_host %}{{m_monit_host['ansible_default_ipv4']['address']}}{% endif %}"
+m_monit_port: '8081'
+m_monit_monitrc_account: "{{ lookup('env','M_MONIT_MONITRC_ACCOUNT') | default('monit') }}"
+m_monit_monitrc_password: "{{ lookup('env','M_MONIT_MONITRC_PASSWORD') | default('monit') }}"
 
 # Canonical service dictionary for templating monit conf files
 # to be filled by calling role 

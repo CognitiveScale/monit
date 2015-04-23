@@ -1,0 +1,13 @@
+## Monit has an embedded web server which can be used to view status of
+## services monitored and manage services from a web interface. See the
+## Monit Wiki if you want to enable SSL for the web server.
+#
+
+set httpd port {{monit_port}} {#
+{% if monit_address is defined %}  use address {{monit_address}}{{'\n'}}{% endif %}
+{% for a in monit_allow %}  allow {{a}}{{'\n'}}{% endfor %}#}
+{% if monit_ssl %}  ssl enable
+  pemfile {{monit_cert}}
+{% endif %}
+
+

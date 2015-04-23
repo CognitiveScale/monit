@@ -5,17 +5,19 @@
     pkg: monit
     state: present
 
-- debug: msg="{{mapped_interface_1}}"
-- debug: msg="{{groups['m_monit']}}"
-- debug: msg="{{monit_mailserver_username}}"
-
 - name: Monit | Update the monit configuration (/etc/monit/monitrc)
   template:
     src: "etc_monit_monitrc.j2"
     dest: "/etc/monit/monitrc"
   notify:
     - restart monit
-                
+
+- name: Force restart if monit_force_reload=yes
+  debug: msg="forcing monit reload"
+  notify:
+    - monit reload
+  when: monit_force_reload is defined and monit_force_reload == 'yes'
+
 # Ansible resolves the path relative to the roles/<rolename>/files directory
 - name: Monit | Template the monit service files
   template:
@@ -27,8 +29,5 @@
   with_fileglob: 
     - ../templates/etc_monit_conf.d_*
   notify:
-    - restart monit
+    - monit reload
 
-# - name: Set up service monitoring for all tagged services
-#   set_fact: 
-#     services="{{group_names | intersect(ansible_role_groups)}}"

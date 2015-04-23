@@ -1,0 +1,17 @@
+# etc_monit_conf.d_filesystem
+
+# Use ansible_mounts gathered_fact
+
+{% for mount in ansible_mounts %}
+check filesystem {{mount.device | replace('/','',count=1)}} with path {{mount.device}}
+  #start program  = "/bin/mount {{mount.mount}}"
+  #stop program  = "/bin/umount {{mount.mount}}"
+  #if failed permission 0751 then unmonitor
+  #if failed uid root then unmonitor
+  #if failed gid root then unmonitor
+  if space usage > 80% for 5 times within 15 cycles then alert
+  #if space usage > 99% then stop
+  if inode usage > 90% then alert
+  #if inode usage > 99% then stop
+  group server
+{% endfor %}

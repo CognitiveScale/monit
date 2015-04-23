@@ -1,0 +1,13 @@
+# etc_monit_conf.d_system.j2
+
+# ansible_processor_cores may not be reliable
+# https://github.com/ansible/ansible/issues/3409
+
+check system {{ ansible_fqdn }}
+  if loadavg (1min) > {{ ansible_processor_cores }} then alert
+  if loadavg (5min) > {{ ansible_processor_cores }} then alert
+  if memory usage > 75% then alert
+  if swap usage > 25% then alert
+  if cpu usage (user) > 70% then alert
+  if cpu usage (system) > 50% then alert
+  if cpu usage (wait) > 20% then alert

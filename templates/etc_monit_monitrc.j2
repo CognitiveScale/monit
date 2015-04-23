@@ -19,7 +19,11 @@ set daemon {{monit_poll_period}}
   with start delay {{monit_poll_start_delay}}
 {% endif %}
 
-set mmonit http://monit:monit@{{m_monit_ip}}:{{m_monit_port}}/collector
+{% if 'm_monit' in groups %}
+set mmonit http://{{m_monit_monitrc_account}}:{{m_monit_monitrc_password}}@{{m_monit_ip}}:{{m_monit_port}}/collector
+{% endif %}
+
+set httpd port {{monit_port}} and allow monit:monit
 
 set logfile {{monit_logfile}}
 
@@ -32,6 +36,7 @@ set mailserver {{monit_mailserver_host}}{% if monit_mailserver_port is defined %
 {% if monit_mailserver_password != '' %}  password "{{monit_mailserver_password}}"{{'\n'}}{% endif %}
 {% if monit_mailserver_encryption != '' %}  using {{monit_mailserver_encryption}}{{'\n'}}{% endif %}
 {% if monit_mailserver_timeout != '' %}  with timeout {{monit_mailserver_timeout}} seconds{{'\n'}}{% endif %}
+
 
 set eventqueue
   basedir {{monit_eventqueue_directory}}

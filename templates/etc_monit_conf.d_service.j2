@@ -1,0 +1,30 @@
+# etc_monit_conf.d_service.j2
+{#
+# set_fact: services="{{group_names | intersect(ansible_role_groups)}}"
+
+{% for service in services %}
+ check process {{service.service_name}} with pidfile {{service.pidfile}} 
+   start program = "{{service.start_cmd}}" with timeout 60 seconds
+   stop program  = "{{service.stop_cmd}}"
+   if cpu > 60% for 2 cycles then alert
+   if cpu > 80% for 5 cycles then restart
+   if totalmem > 200.0 MB for 5 cycles then restart
+   if children > 250 then restart
+   if loadavg(5min) greater than 10 for 8 cycles then stop
+   {% for domain in service.domains %}
+   if failed host {{service.domain}} port {{service.port}} protocol {{service.protocol}}
+      and request "{{service.endpoint}}"
+      then restart
+   {% endfor %}
+   {% for port in service.ports %}
+   if failed port 443 type tcpssl protocol http
+      with timeout 15 seconds
+      then restart
+   {% endfor %}
+   if 3 restarts within 5 cycles then timeout
+   # depends on dependency
+   group service
+   {% endfor %}
+#}
+
+   {# % for dependency in service.dependencies % #}
