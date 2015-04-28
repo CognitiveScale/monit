@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+__author__ = 'eschuchmann'
+
+from docker import Client
+import logging
+import argparse
+import sys
+import json
+
+class ContainerHealthcheck():
+    def __init__(self, base_url):
+        self.client = Client(base_url=base_url, version='auto')
+
+    def _get_inspection(self, container_id):
+        return self.client.inspect_container(container_id)
+
+    def _get_container_id(self, container):
+        return container["Id"]
+
+    def _get_container_name(self, container):
+        return re.sub("[^\w]+", "", container['Names'][0])
+
+    def is_healthy(self, container_id):
+        try:
+            inspection = self._get_inspection(container_id)
+            return inspection['State']['Running']
+        except:
+            return False
+
+    def is_unhealthy(self, container_ids):
+        return [c for c in container_ids if not self.is_healthy(c)]
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Docker Container Healthcheck")
+    parser.add_argument("-s", "--server", default="unix://var/run/docker.sock")
+    parser.add_argument("-v", "--verbose", action="count")
+    parser.add_argument("--container", type=str, help='container id as returned by docker ps')
+    return parser.parse_args()
+
+def setup_logging(level):
+    log = logging.getLogger()
+    formatter = logging.Formatter('%(message)s')
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
+    log.setLevel(max(logging.WARN - (10 * (level or 0)), logging.DEBUG))
+    return log
+
+container_list = """
+{{ansible_local.docker_services | to_nice_json}}
+"""
+
+def get_metadata():
+    try:
+        metadata = json.loads(container_list)
+        metadata.keys()
+    except:
+        metadata = dict()
+    return {v['id']: {'name': k, 'image': v['image']} for k,v in metadata.iteritems()}
+
+if __name__ == "__main__":
+    args = parse_args()
+    log = setup_logging(args.verbose)
+    metadata = get_metadata()
+    if args.container is not None:
+        containers = [ args.container ]
+    else:
+        containers = metadata.keys()
+    if len(containers) == 0:
+        log.error("Configuration error.  No containers configured")
+        sys.exit(1)
+    healthcheck = ContainerHealthcheck(args.server)
+    unhealthy_services = healthcheck.is_unhealthy(containers)
+    print("Container Healthcheck: %i out of %i containers unhealthy" % (len(unhealthy_services), len(containers)))
+    for id in unhealthy_services:
+        metadata_entry = metadata.get(id, {'name': 'unknown name', 'image': 'unknown image'})
+        print "\t%s (%s) NOT RUNNING" % (metadata_entry['name'], metadata_entry['image'])
+    sys.exit(1 if len(unhealthy_services) > 0 else 0)

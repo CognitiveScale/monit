@@ -1,3 +1,4 @@
+# TODO - make ntp check dependent on ntp being installed on system
 check process ntp with pidfile /var/run/ntpd.pid
   group system
   start program = "/etc/init.d/ntp start"

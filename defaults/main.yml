@@ -43,13 +43,15 @@ monit_cert: "/etc/monit/monit.pem"
 monit_monitors_sshd_port: 22
 
 m_monit_host: "{% if 'm_monit' in groups %}{{hostvars[groups['m_monit'][0]]}}{% else %}{% endif %}"
-m_monit_ip: "{% if m_monit_host %}{{m_monit_host['ansible_default_ipv4']['address']}}{% endif %}"
+#m_monit_ip: "{% if m_monit_host %}{{m_monit_host['ansible_default_ipv4']['address']}}{% endif %}"
+# TODO - wire in galaxy name to m_monit_ip
+m_monit_ip: mmonit.csdev.insights.ai
 m_monit_port: '8081'
 m_monit_monitrc_account: "{{ lookup('env','M_MONIT_MONITRC_ACCOUNT') | default('monit') }}"
 m_monit_monitrc_password: "{{ lookup('env','M_MONIT_MONITRC_PASSWORD') | default('monit') }}"
 
 # Canonical service dictionary for templating monit conf files
-# to be filled by calling role 
+# to be filled by calling role
 # service:
 #  start_cmd:
 #  stop_cmd:

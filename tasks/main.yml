@@ -18,6 +18,30 @@
     - monit reload
   when: monit_force_reload is defined and monit_force_reload == 'yes'
 
+# install custom healthchecks
+- name: copy requirements
+  copy:
+    src: check_container_requirements.txt
+    dest: /tmp
+
+- name: install check_container requirements
+  pip:
+    requirements: /tmp/check_container_requirements.txt
+    state: present
+
+- name: create custom healthchecks directory
+  file:
+    dest: /etc/monit/scripts
+    state: directory
+
+- name: install check_container script
+  template:
+    src: check_containers.py.j2
+    dest: /etc/monit/scripts/check_containers.py
+    mode: 0755
+  notify:
+    - monit reload
+
 # Ansible resolves the path relative to the roles/<rolename>/files directory
 - name: Monit | Template the monit service files
   template:
@@ -26,8 +50,7 @@
     owner: "{{ansible_ssh_user}}"
     group: "{{ansible_ssh_user}}"
     mode: 0660
-  with_fileglob: 
+  with_fileglob:
     - ../templates/etc_monit_conf.d_*
   notify:
     - monit reload
-
