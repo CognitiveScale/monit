@@ -1,0 +1,80 @@
+# etc_monit_conf.d_containers.j2
+
+{% if ansible_local.docker_services is defined %}
+
+# simple container uptime monitoring
+  check program container_check with path "/etc/monit/scripts/check_containers.py"
+       if status != 0 then alert
+
+  {% for container_name, container_value in ansible_local.docker_services.iteritems() %}
+    {% if "elasticsearch" in container_value.image  %}
+      {% set host_port = container_value.ports['9200/tcp'] %}
+      {% if host_port is iterable %}
+# Elasticsearch Healthcheck (using localhost - not proxy)
+        check host {{container_name}} with address 0.0.0.0
+          if failed url http://{{host_port[0].HostIp}}:{{host_port[0].HostPort}}/_cluster/health
+          and content == 'green'
+          with timeout 60 seconds
+          then alert
+      {% endif %}
+
+    {% elif "mongodb" in container_value.image %}
+      {% set host_port = container_value.ports['28017/tcp'] %}
+      {% if host_port is iterable %}
+# Mongo DB localhost REST alive healthcheck
+        check host {{container_name}} with address 0.0.0.0
+           if failed host {{host_port[0].HostIp}} port {{host_port[0].HostPort}} protocol http
+             and request "/" with timeout 10 seconds
+             then alert
+      {% endif %}
+
+    {% elif "neo4j" in container_value.image %}
+      {% set host_port = container_value.ports['7474/tcp'] %}
+      {% if host_port is iterable %}
+# Neo4j basic localhost REST alive healthcheck
+        check host {{container_name}} with address 0.0.0.0
+           if failed host {{host_port[0].HostIp}} port {{host_port[0].HostPort}} protocol http
+             and request "/db/data/" with timeout 10 seconds
+             then alert
+      {% endif %}
+
+    {% elif "redis" in container_value.image %}
+      {% set host_port = container_value.ports['6379/tcp'] %}
+      {% if host_port is iterable %}
+  # Redis basic REST endpoint check
+        check host {{container_name}} with address 0.0.0.0
+          if failed host {{host_port[0].HostIp}} port {{host_port[0].HostPort}}
+            send "SET monit_healthcheck_key alive\n"
+            expect "OK"
+            send "EXISTS monit_healthcheck_key\n"
+            expect ":1"
+          then alert
+      {% endif %}
+
+    {% elif container_value.metadata.healthchecks is defined %}
+      {% for healthcheck in container_value.metadata.healthchecks %}
+        {% if healthcheck.type == 'http' %}
+# http container monitoring
+          {% if healthcheck.external_host is not defined or healthcheck.external_host == '__UNKNOWN__' %}
+            set host_port = container_value.ports['{{healthcheck.external_port}}/tcp'] %}
+            {% if host_port is iterable %}
+  # (localhost only)
+              check host {{ container_name }} with address 0.0.0.0
+                 if failed host {{host_port[0].HostIp}} port {{host_port[0].HostPort}} protocol http
+                   and request "{{healthcheck.path}}"
+                   then alert
+            {% endif %}
+          {% else %}
+  # (with proxy check)
+              check host {{ container_name }} with address 0.0.0.0
+                 if failed host {{healthcheck.external_host}} port {{healthcheck.external_port}} protocol http
+                   and request "{{healthcheck.path}}"
+                   then alert
+          {% endif %}
+        {% else %}
+          # unsupported healthcheck type: {{healthcheck.type}}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
