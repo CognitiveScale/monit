@@ -20,7 +20,7 @@ set daemon {{monit_poll_period}}
 {% endif %}
 
 {% if 'm_monit' in groups %}
-set mmonit http://{{m_monit_monitrc_account}}:{{m_monit_monitrc_password}}@{{m_monit_ip}}:{{m_monit_port}}/collector
+set mmonit http://{{m_monit_monitrc_account}}:{{m_monit_monitrc_password}}@{{m_monit_host}}:{{m_monit_port}}/collector
 {% endif %}
 
 set httpd port {{monit_port}} and allow monit:monit
